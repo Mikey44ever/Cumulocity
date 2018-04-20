@@ -1,0 +1,105 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.10.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "com.moowork.gradle:gradle-node-plugin:1.1.1"
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'com.moowork.node'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.corusconsulting'
+version = '0.0.1'
+sourceCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/libs-release' }
+	maven { url "http://download.cumulocity.com/maven/repository" }
+}
+
+springBoot {
+	executable = true
+}
+
+jar {
+	enabled = true
+}
+
+node {
+	version = "9.6.1"
+	download = true
+	nodeModulesDir = file("frontend")
+}
+
+dependencies {
+	compile ('org.hibernate:hibernate-core:5.2.12.Final')
+	compile ('org.hibernate:hibernate-validator:5.2.1.Final') {
+		//exclude(module : 'validation-api')
+	}
+	compile ('javax.validation:validation-api:2.0.1.Final')
+	compile ("io.jsonwebtoken:jjwt:0.7.0")
+	compile ("org.springframework.boot:spring-boot-starter-security")
+	compile ('mysql:mysql-connector-java:5.1.13')
+	compile ('javax.el:javax.el-api:3.0.0')
+	compile ("com.h2database:h2")
+	compile ('com.nsn.cumulocity.clients-java:java-client:8.13.0')
+	compile ('com.nsn.cumulocity.model:device-capability-model:8.13.0')
+	compile ('com.google.code.gson:gson:2.8.2')
+	compile ('log4j:log4j:1.2.17')
+	compile ('org.springframework.boot:spring-boot-starter-actuator')
+	compile ('org.springframework.boot:spring-boot-starter-data-jpa') {
+		exclude(module : 'hibernate-core')
+	}
+	compile ('org.springframework.boot:spring-boot-starter-web') {
+		//exclude(module: 'hibernate-validator')
+	}
+	compile('org.springframework.boot:spring-boot-starter-test') {
+		exclude(module: 'commons-logging')
+	}
+	compile('org.springframework.boot:spring-boot-devtools')
+	//providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
+}
+
+task buildClientDev(type: NpmTask, dependsOn: 'npmInstall') {
+	group = 'build'
+	description = 'Compile client side folder for development'
+	args = ['run','buildDev']
+}
+
+task buildClientWatch(type: NpmTask, dependsOn: 'npmInstall') {
+	group = 'application'
+	description = "Build and watches the client side assets for rebuilding"
+	args = ['run','buildWatch']
+}
+
+task buildWatch(type: NpmTask, dependsOn: 'npmInstall') {
+	group = 'application'
+	description = "Build and watches the client side assets for rebuilding"
+	args = ['run','buildWatch']
+}
+
+task buildClient(type:NpmTask, dependsOn:'npmInstall') {
+	group = 'build'
+	description = "Compile client side folder for production"
+	args = ['run','build']
+}
+
+bootRun.dependsOn(buildClientDev)
+jar.dependsOn(buildClient)
